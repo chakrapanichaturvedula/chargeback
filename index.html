@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chargeback Integrity Analytics — Applied Case: Shanta Pharma Limited</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#161412;          /* near-black ink */
+    --paper:#f6f3ec;        /* warm ledger paper */
+    --paper-2:#efe9dd;      /* card paper */
+    --rule:#d8d0bf;         /* hairline rule */
+    --rule-strong:#b9ad94;
+    --muted:#6b6357;
+    --flag:#b3402a;         /* vermilion = flagged/invalid */
+    --flag-bg:#f5e3dd;
+    --valid:#3f6f4f;        /* ledger green = valid */
+    --accent-ink:#2a2620;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Newsreader',Georgia,serif;
+    font-size:18px;line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  .mono{font-family:'IBM Plex Mono',monospace}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 28px}
+
+  /* ---- top bar ---- */
+  .topbar{border-bottom:1px solid var(--rule);position:sticky;top:0;background:rgba(246,243,236,.92);backdrop-filter:blur(6px);z-index:50}
+  .topbar .wrap{display:flex;align-items:center;justify-content:space-between;height:58px}
+  .brandmark{font-family:'IBM Plex Mono',monospace;font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+  .brandmark b{color:var(--ink);font-weight:600}
+  .topnav{display:flex;gap:22px}
+  .topnav a{font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);text-decoration:none}
+  .topnav a:hover{color:var(--flag)}
+  @media(max-width:680px){.topnav{display:none}}
+
+  /* ---- hero ---- */
+  .hero{padding:72px 0 40px;border-bottom:1px solid var(--rule)}
+  .eyebrow{font-family:'IBM Plex Mono',monospace;font-size:12.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--flag);margin-bottom:20px}
+  h1{font-size:clamp(38px,6vw,68px);font-weight:500;line-height:1.02;letter-spacing:-.015em;margin-bottom:18px}
+  h1 .l2{display:block;font-style:italic;color:var(--accent-ink)}
+  .lede{font-size:21px;max-width:60ch;color:#332f29;margin-bottom:26px}
+  .casebar{display:flex;flex-wrap:wrap;gap:8px 26px;font-family:'IBM Plex Mono',monospace;font-size:12.5px;letter-spacing:.04em;color:var(--muted);border-top:1px solid var(--rule);padding-top:18px}
+  .casebar b{color:var(--ink);font-weight:600}
+
+  /* ---- the ledger strip (signature) ---- */
+  .ledger{margin:0 0 4px;border-bottom:1px solid var(--rule)}
+  .ledger-head{display:flex;justify-content:space-between;align-items:baseline;padding:30px 0 14px}
+  .ledger-head h2{font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+  .ledger-head .note{font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--muted)}
+  .tablewrap{overflow-x:auto;border:1px solid var(--rule);border-radius:2px;margin-bottom:34px;background:#fbf9f4}
+  table.ledgertbl{border-collapse:collapse;width:100%;font-family:'IBM Plex Mono',monospace;font-size:12.5px;white-space:nowrap}
+  table.ledgertbl th{background:var(--paper-2);text-align:left;padding:9px 12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;font-size:10.5px;color:var(--muted);border-bottom:1px solid var(--rule-strong);position:sticky;top:0}
+  table.ledgertbl td{padding:8px 12px;border-bottom:1px solid var(--rule)}
+  table.ledgertbl tr:last-child td{border-bottom:none}
+  td.num{text-align:right}
+  .tag{display:inline-block;padding:1px 7px;border-radius:2px;font-size:10.5px;letter-spacing:.04em}
+  .tag.v{background:#e3ecdf;color:var(--valid)}
+  .tag.x{background:var(--flag-bg);color:var(--flag)}
+  tr.flagged td{background:#fbf0ec}
+
+  /* ---- stat band ---- */
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border:1px solid var(--rule);border-radius:2px;overflow:hidden;margin:8px 0 60px;background:#fbf9f4}
+  .stat{padding:24px 22px;border-right:1px solid var(--rule)}
+  .stat:last-child{border-right:none}
+  .stat .k{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+  .stat .v{font-size:34px;font-weight:500;line-height:1;letter-spacing:-.02em}
+  .stat .v.flag{color:var(--flag)}
+  .stat .sub{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted);margin-top:7px}
+  @media(max-width:680px){.stats{grid-template-columns:repeat(2,1fr)}.stat:nth-child(2){border-right:none}.stat:nth-child(1),.stat:nth-child(2){border-bottom:1px solid var(--rule)}}
+
+  /* ---- sections ---- */
+  section{padding:52px 0;border-bottom:1px solid var(--rule)}
+  .sec-eyebrow{font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--flag);margin-bottom:14px}
+  h2.big{font-size:clamp(26px,3.4vw,38px);font-weight:500;letter-spacing:-.01em;margin-bottom:22px;max-width:24ch}
+  .prose{max-width:66ch}
+  .prose p{margin-bottom:16px;color:#2c2822}
+  .prose p .term{font-style:italic;color:var(--flag)}
+
+  .qgrid{display:grid;grid-template-columns:1fr 1fr;gap:0;border-top:1px solid var(--rule);border-left:1px solid var(--rule);margin-top:28px}
+  .q{border-right:1px solid var(--rule);border-bottom:1px solid var(--rule);padding:22px 24px}
+  .q .qn{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--flag);margin-bottom:8px}
+  .q p{font-size:17px;color:#2c2822}
+  @media(max-width:680px){.qgrid{grid-template-columns:1fr}}
+
+  /* ---- error taxonomy ---- */
+  .errlist{margin-top:24px;border-top:1px solid var(--rule)}
+  .err{display:grid;grid-template-columns:200px 1fr 70px;gap:18px;align-items:baseline;padding:15px 0;border-bottom:1px solid var(--rule)}
+  .err .name{font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600;color:var(--flag)}
+  .err .def{color:#2c2822;font-size:16.5px}
+  .err .ct{font-family:'IBM Plex Mono',monospace;font-size:13px;text-align:right;color:var(--muted)}
+  @media(max-width:680px){.err{grid-template-columns:1fr;gap:4px}.err .ct{text-align:left}}
+
+  /* ---- downloads ---- */
+  #downloads{background:var(--ink);color:var(--paper);border-bottom:none}
+  #downloads .sec-eyebrow{color:#e0a596}
+  #downloads h2.big{color:var(--paper)}
+  .files{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:30px}
+  @media(max-width:680px){.files{grid-template-columns:1fr}}
+  .file{display:flex;align-items:center;justify-content:space-between;gap:16px;background:#211e1a;border:1px solid #34302a;border-radius:3px;padding:18px 20px;text-decoration:none;color:var(--paper);transition:border-color .15s,transform .15s}
+  .file:hover{border-color:#e0a596;transform:translateY(-1px)}
+  .file .fl{display:flex;flex-direction:column;gap:4px}
+  .file .fn{font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:500}
+  .file .fd{font-size:14px;color:#b3aaa0}
+  .file .ext{font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:#161412;background:#e0a596;padding:4px 9px;border-radius:2px;white-space:nowrap}
+  .file .ext.csv{background:#c8b89a}
+  .file .ext.py{background:#9db4c0}
+  .file .ext.doc{background:#cdb8d6}
+  .dlnote{font-family:'IBM Plex Mono',monospace;font-size:12px;color:#8d857a;margin-top:24px;line-height:1.7}
+  .dlnote a{color:#e0a596}
+
+  /* ---- caveat / footer ---- */
+  .caveat{background:var(--flag-bg);border:1px solid #e3c4ba;border-radius:3px;padding:20px 24px;margin-top:8px}
+  .caveat .h{font-family:'IBM Plex Mono',monospace;font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--flag);margin-bottom:8px}
+  .caveat p{font-size:15.5px;color:#5a382f;max-width:74ch}
+  footer{padding:40px 0 60px}
+  footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:14px;font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--muted)}
+  footer a{color:var(--muted)}
+
+  a.inl{color:var(--flag);text-decoration:underline;text-underline-offset:2px}
+  :focus-visible{outline:2px solid var(--flag);outline-offset:2px}
+  @media(prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="wrap">
+    <div class="brandmark"><b>Chargeback Integrity</b> &nbsp;/&nbsp; Applied Analytics</div>
+    <nav class="topnav">
+      <a href="#problem">Problem</a>
+      <a href="#data">Data</a>
+      <a href="#errors">Errors</a>
+      <a href="#downloads">Downloads</a>
+    </nav>
+  </div>
+</div>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="eyebrow">Pharmaceutical gross-to-net · finance operations</div>
+    <h1>Chargeback integrity<span class="l2">analytics.</span></h1>
+    <p class="lede">Wholesalers bill manufacturers back for the gap between list price and contract price. A share of those claims are wrong. This project finds them — and counts the money.</p>
+    <div class="casebar">
+      <span>Applied case: <b>Shanta Pharma Limited</b></span>
+      <span>Ledger: <b>12,203 lines</b></span>
+      <span>Seed prices: <b>CMS NADAC (public)</b></span>
+      <span>Status: <b>synthetic dataset</b></span>
+    </div>
+  </div>
+</header>
+
+<!-- SIGNATURE: a live ledger strip with one flagged row -->
+<div class="wrap">
+  <div class="ledger">
+    <div class="ledger-head">
+      <h2>chargeback_ledger.csv — sample</h2>
+      <span class="note">red = flagged for review</span>
+    </div>
+    <div class="tablewrap">
+      <table class="ledgertbl">
+        <thead>
+          <tr>
+            <th>chargeback_id</th><th>date</th><th>wholesaler</th><th>customer</th><th>contract</th>
+            <th>drug</th><th>cls</th><th class="num">qty</th><th class="num">wac</th>
+            <th class="num">claimed</th><th class="num">amount $</th><th>flag</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>CB2009197</td><td>2024-12-07</td><td>McKesson</td><td>CUST1058</td><td>IDN</td><td>ABACAVIR 300 MG</td><td>G</td><td class="num">1,781</td><td class="num">0.730</td><td class="num">0.622</td><td class="num">191.40</td><td><span class="tag v">valid</span></td></tr>
+          <tr><td>CB2001416</td><td>2024-07-18</td><td>Cardinal</td><td>CUST1008</td><td>SPECIALTY</td><td>ABACAVIR-LAMIVUDINE</td><td>G</td><td class="num">3,489</td><td class="num">1.604</td><td class="num">1.168</td><td class="num">1,522.29</td><td><span class="tag v">valid</span></td></tr>
+          <tr class="flagged"><td>CB2011489</td><td>2024-08-18</td><td>Cardinal</td><td>CUST1028</td><td>IDN</td><td>INSULIN GLARGINE</td><td>B</td><td class="num">4,640</td><td class="num">43.295</td><td class="num">25.647</td><td class="num">81,885.06</td><td><span class="tag x">price&nbsp;mismatch</span></td></tr>
+          <tr><td>CB2002770</td><td>2024-12-16</td><td>McKesson</td><td>CUST1054</td><td>GPO</td><td>12HR NASAL DECONGEST</td><td>G</td><td class="num">2,436</td><td class="num">0.307</td><td class="num">0.222</td><td class="num">207.86</td><td><span class="tag v">valid</span></td></tr>
+          <tr><td>CB2001966</td><td>2024-09-02</td><td>Cardinal</td><td>CUST1030</td><td>IDN</td><td>INSULIN GLARGINE</td><td>B</td><td class="num">3,692</td><td class="num">43.295</td><td class="num">31.744</td><td class="num">42,646.81</td><td><span class="tag v">valid</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- STAT BAND -->
+<div class="wrap">
+  <div class="stats">
+    <div class="stat"><div class="k">Chargeback lines</div><div class="v">12,203</div><div class="sub">across 60 customers</div></div>
+    <div class="stat"><div class="k">Total billed</div><div class="v">$1.61B</div><div class="sub">value submitted</div></div>
+    <div class="stat"><div class="k">Flagged lines</div><div class="v flag">7.4%</div><div class="sub">906 lines · 6 error types</div></div>
+    <div class="stat"><div class="k">Value at risk</div><div class="v flag">$192.7M</div><div class="sub">12.0% of dollars</div></div>
+  </div>
+</div>
+
+<!-- PROBLEM -->
+<section id="problem">
+  <div class="wrap">
+    <div class="sec-eyebrow">01 — The problem</div>
+    <h2 class="big">A high-volume payout that nobody can fully check by hand.</h2>
+    <div class="prose">
+      <p>Manufacturers sell to wholesalers at the <span class="term">Wholesale Acquisition Cost</span> (WAC, the list price). But hospitals, clinics, GPOs and 340B entities hold contracts entitling them to lower prices. When a wholesaler sells at the contracted price, it has been paid less than the WAC it paid the manufacturer — and bills the difference back. That credit is the <span class="term">chargeback</span>.</p>
+      <p>Chargebacks are among the largest gross-to-net deductions a manufacturer carries. The volume runs to millions of lines, the contracts are complex, and validation is manual. A meaningful share of what gets paid is duplicated, mispriced, or claimed against the wrong contract — direct, recoverable leakage.</p>
+      <p>Shanta Pharma Limited wants to size that leakage and build an analytics capability that flags invalid claims <em>before</em> they are paid — without disrupting legitimate distributor relationships.</p>
+    </div>
+    <div class="qgrid">
+      <div class="q"><div class="qn">Q1</div><p>How much of the total payout is attributable to invalid or disputable claims?</p></div>
+      <div class="q"><div class="qn">Q2</div><p>Which error types drive the largest dollar exposure?</p></div>
+      <div class="q"><div class="qn">Q3</div><p>Can rules-based reconciliation plus ML anomaly detection reliably flag bad claims?</p></div>
+      <div class="q"><div class="qn">Q4</div><p>How should flagged claims be prioritised so limited analyst time hits the biggest recoveries?</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- DATA -->
+<section id="data">
+  <div class="wrap">
+    <div class="sec-eyebrow">02 — The dataset</div>
+    <h2 class="big">One labelled ledger, three master tables.</h2>
+    <div class="prose">
+      <p>The chargeback economics are real: <span class="mono" style="font-size:15px">chargeback = (WAC − contract price) × quantity</span>. Drug codes and per-unit acquisition costs are drawn from the public CMS NADAC file; contracts, customers, transactions and error labels are simulated, and every line carries a ground-truth label so models can be trained <em>and</em> scored.</p>
+      <p>The two-table design — ledger versus contract master — is deliberate. It forces a reconciliation step against a source of truth, which is the actual day-job of chargeback operations, not a single-CSV anomaly toy.</p>
+    </div>
+    <div class="errlist" style="border-top:none;margin-top:20px">
+      <div class="err"><span class="name mono">chargeback_ledger</span><span class="def">12,203 chargeback lines with ground-truth error labels — the modelling target.</span><span class="ct">15 cols</span></div>
+      <div class="err"><span class="name mono">contract_master</span><span class="def">Contracted discount and validity window per customer and rate class — the reconciliation source of truth.</span><span class="ct">5 cols</span></div>
+      <div class="err"><span class="name mono">customer_master</span><span class="def">60 customers and their contract channel (GPO / 340B / IDN / Specialty).</span><span class="ct">2 cols</span></div>
+      <div class="err"><span class="name mono">drug_price_reference</span><span class="def">NDC-level NADAC and derived WAC price spine across 14 products.</span><span class="ct">7 cols</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ERRORS -->
+<section id="errors">
+  <div class="wrap">
+    <div class="sec-eyebrow">03 — Error taxonomy</div>
+    <h2 class="big">Six ways a chargeback goes wrong.</h2>
+    <p class="prose" style="color:#2c2822">These are the labelled failure modes injected into the ledger — the same categories real chargeback teams reconcile against.</p>
+    <div class="errlist">
+      <div class="err"><span class="name">DUPLICATE</span><span class="def">Same economic chargeback submitted more than once — double-pay risk.</span><span class="ct">203</span></div>
+      <div class="err"><span class="name">PRICE_MISMATCH</span><span class="def">Claimed contract price lower than the customer's contracted price on file — an over-claim.</span><span class="ct">240</span></div>
+      <div class="err"><span class="name">EXPIRED_CONTRACT</span><span class="def">Chargeback claimed against a contract outside its validity window.</span><span class="ct">115</span></div>
+      <div class="err"><span class="name">INELIGIBLE_MEMBER</span><span class="def">Customer's contract channel doesn't match the contract master — an eligibility error.</span><span class="ct">91</span></div>
+      <div class="err"><span class="name">QTY_OUTLIER</span><span class="def">Implausible quantity relative to normal ordering behaviour.</span><span class="ct">141</span></div>
+      <div class="err"><span class="name">UNIT_MISMATCH</span><span class="def">Pricing unit inconsistent with the product's reference unit (EA / ML / GM).</span><span class="ct">116</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- DOWNLOADS -->
+<section id="downloads">
+  <div class="wrap">
+    <div class="sec-eyebrow">04 — Take the files</div>
+    <h2 class="big">Everything, downloadable.</h2>
+    <div class="files">
+      <a class="file" href="data/chargeback_ledger.csv" download>
+        <span class="fl"><span class="fn">chargeback_ledger.csv</span><span class="fd">12,203 labelled lines · the main table</span></span>
+        <span class="ext csv">csv</span>
+      </a>
+      <a class="file" href="data/contract_master.csv" download>
+        <span class="fl"><span class="fn">contract_master.csv</span><span class="fd">Reconciliation source of truth</span></span>
+        <span class="ext csv">csv</span>
+      </a>
+      <a class="file" href="data/customer_master.csv" download>
+        <span class="fl"><span class="fn">customer_master.csv</span><span class="fd">60 customers · contract channels</span></span>
+        <span class="ext csv">csv</span>
+      </a>
+      <a class="file" href="data/drug_price_reference.csv" download>
+        <span class="fl"><span class="fn">drug_price_reference.csv</span><span class="fd">NADAC / WAC price spine · 14 NDCs</span></span>
+        <span class="ext csv">csv</span>
+      </a>
+      <a class="file" href="data/simulate_chargebacks.py" download>
+        <span class="fl"><span class="fn">simulate_chargebacks.py</span><span class="fd">The generator — tune and reproduce</span></span>
+        <span class="ext py">py</span>
+      </a>
+      <a class="file" href="data/Shanta_Pharma_Chargeback_Project.docx" download>
+        <span class="fl"><span class="fn">Project brief (.docx)</span><span class="fd">Problem statement · data dictionary</span></span>
+        <span class="ext doc">docx</span>
+      </a>
+    </div>
+    <p class="dlnote">
+      Prefer the command line? Clone the whole thing:<br>
+      <span style="color:#e0a596">git clone https://github.com/chakrapanichaturvedula/chargeback.git</span><br><br>
+      Repository: <a href="https://github.com/chakrapanichaturvedula/chargeback">github.com/chakrapanichaturvedula/chargeback</a>
+    </p>
+  </div>
+</section>
+
+<!-- CAVEAT -->
+<div class="wrap" style="padding-top:40px">
+  <div class="caveat">
+    <div class="h">Honest note on the data</div>
+    <p>This is an academic exercise. “Shanta Pharma Limited” is an illustrative manufacturer, not a real company’s data. The dataset is synthetic: drug codes and acquisition costs come from the public CMS NADAC file, but WAC markups, contract terms, error rates and the error mix are modelling assumptions chosen to be plausible — not measured industry figures. The ~12% value-at-risk is a property of the simulation and should be read as illustrative. The generator is included so every number is reproducible.</p>
+  </div>
+</div>
+
+<footer>
+  <div class="wrap">
+    <span>Applied analytics project · chargeback integrity</span>
+    <span>Seed data: CMS NADAC (public) · Dataset &amp; labels: synthetic</span>
+    <span><a href="https://github.com/chakrapanichaturvedula/chargeback">github.com/chakrapanichaturvedula/chargeback</a></span>
+  </div>
+</footer>
+
+</body>
+</html>
